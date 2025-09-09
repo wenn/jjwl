@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Table with Inline Video (Optimized)</title>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
+  <style>
+    body { padding: 1rem; }
+    table td, table th { vertical-align: top; }
+    .video-row td { background: #f9fafb; text-align: center; }
+    video { width: 100%; max-height: 480px; border-radius: 0.5rem; }
+    button { white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h2>Match Videos</h2>
+    <input type="search" id="search" placeholder="🔍 Search matches..." aria-label="Search">
+
+    <table id="csvTable" role="grid">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Event</th>
+          <th>Category</th>
+          <th>Video</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <!-- Raw CSV (shortened for example) -->
+  <script id="csvData" type="text/plain">
+    CSV_DATA
+  </script>
+
+  <script>
+    const raw = document.getElementById("csvData").textContent.trim();
+    const rows = raw.split("\n").map(r => r.split(","));
+    const data = rows.map(r => ({
+      title: r[0].trim(),
+      event: r[1].trim(),
+      category: r[2].trim(),
+      video: r[3].trim()
+    }));
+
+    const tbody = document.querySelector("#csvTable tbody");
+    let openVideoRow = null;
+
+    // Render limited rows
+    function renderTable(items, limit = 200) {
+      tbody.innerHTML = "";
+      items.slice(0, limit).forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.title}</td>
+          <td>${item.event}</td>
+          <td>${item.category}</td>
+          <td><button data-index="${idx}" class="secondary">Open Video</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Use event delegation for buttons
+    tbody.addEventListener("click", e => {
+      if (e.target.tagName !== "BUTTON") return;
+      const idx = e.target.dataset.index;
+      const row = e.target.closest("tr");
+
+      // Close previous video
+      if (openVideoRow && openVideoRow !== row.nextSibling) {
+        openVideoRow.remove();
+        if (openVideoRow.previousSibling) {
+          openVideoRow.previousSibling.querySelector("button").textContent = "Open Video";
+        }
+        openVideoRow = null;
+      }
+
+      // Toggle this video
+      if (openVideoRow === row.nextSibling) {
+        openVideoRow.remove();
+        e.target.textContent = "Open Video";
+        openVideoRow = null;
+      } else {
+        const videoRow = document.createElement("tr");
+        videoRow.classList.add("video-row");
+        videoRow.innerHTML = `<td colspan="4">
+          <video controls autoplay>
+            <source src="${currentResults[idx].video}" type="video/mp4">
+          </video>
+        </td>`;
+        row.insertAdjacentElement("afterend", videoRow);
+        e.target.textContent = "Close Video";
+        openVideoRow = videoRow;
+      }
+    });
+
+    // Initialize Fuse
+    const fuse = new Fuse(data, {
+      keys: ["title", "event", "category"],
+      threshold: 0.35,
+      includeScore: true
+    });
+
+    let currentResults = data;
+
+    // Debounce function
+    function debounce(fn, delay = 250) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    // Search handler
+    function handleSearch(q) {
+      if (openVideoRow) {
+        openVideoRow.remove();
+        openVideoRow = null;
+      }
+      if (!q) {
+        currentResults = data;
+      } else {
+        currentResults = fuse.search(q).map(r => r.item);
+      }
+      renderTable(currentResults);
+    }
+
+    document.getElementById("search").addEventListener(
+      "input",
+      debounce(e => handleSearch(e.target.value.trim()), 250)
+    );
+
+    // Initial render
+    renderTable(data);
+  </script>
+</body>
+</html>

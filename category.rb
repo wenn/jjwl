@@ -63,7 +63,7 @@ def simplify_match(match)
   }
 end
 
-def write_to_csv(categories_data, output_file = 'data/categories_flattened.csv')
+def write_to_csv(categories_data, output_file = 'data/matches.csv')
   return if categories_data.empty?
 
   headers = [ :title, :event_name, :category, :match_video_uri ]

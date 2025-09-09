@@ -57,3 +57,9 @@ brackets: $(foreach dir,$(event_dirs),$(dir)/categories/brackets.make)
 always:
 	@: true
 
+
+data/matches.csv: always
+	@ruby category.rb
+
+index.html: index.html.tmpl data/matches.csv
+	@awk 'BEGIN { while ((getline < "data/matches.csv") > 0) content = content $$0 RS } /CSV_DATA/{printf "%s", content; next} {print}' $< > $@ && open $@
