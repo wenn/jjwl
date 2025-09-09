@@ -1,6 +1,9 @@
 name: Generate index.yml
 
 on:
+  workflow_dispatch: {}
+
+on:
   schedule:
     - cron: '0 0 * * FRI'
 
