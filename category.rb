@@ -33,10 +33,11 @@ def flatten_bracket_data(bracket, source_file)
   return nil unless bracket['status'] == 'CONCLUDED' || bracket['status'] == 'COMPLETED'
   puts "Processing bracket: #{bracket['category']} from #{source_file}"
 
-  event_name = source_file.split('/')[3]
+  event_path = source_file.split('/')[0..3]
+  event_name = File.read("#{event_path.join('/')}/name.txt").strip
 
   flattened = {
-    event_name: event_name.split('-').map(&:capitalize).join(' '),
+    event_name: event_name,
     category: bracket['category'],
   }
 

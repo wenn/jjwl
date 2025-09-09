@@ -3,8 +3,13 @@ event_category_files := $(foreach dir,$(event_dirs),$(dir)/categories.txt)
 
 .SECONDARY:
 
-all: clean data/events
-	make brackets
+
+.PHONY: all
+all: data index.html
+
+.PHONY: data
+data: clean data/events
+	make -j16 brackets
 
 .PHONY: clean
 clean:
@@ -63,3 +68,5 @@ data/matches.csv: always
 
 index.html: index.html.tmpl data/matches.csv
 	@awk 'BEGIN { while ((getline < "data/matches.csv") > 0) content = content $$0 RS } /CSV_DATA/{printf "%s", content; next} {print}' $< > $@ && open $@
+	@gsed -i 's/dl=0/raw=1/g' $@
+	@gsed -i 's/raw=0/raw=1/g' $@

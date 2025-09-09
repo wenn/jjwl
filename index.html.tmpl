@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CSV Table with Inline Video (Optimized)</title>
+  <title>JJWL Matches</title>
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
   <style>
@@ -15,15 +15,14 @@
 </head>
 <body>
   <main class="container">
-    <h2>Match Videos</h2>
     <input type="search" id="search" placeholder="🔍 Search matches..." aria-label="Search">
 
     <table id="csvTable" role="grid">
       <thead>
         <tr>
-          <th>Title</th>
           <th>Event</th>
           <th>Category</th>
+          <th>Title</th>
           <th>Video</th>
         </tr>
       </thead>
@@ -54,13 +53,35 @@
       tbody.innerHTML = "";
       items.slice(0, limit).forEach((item, idx) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${item.title}</td>
-          <td>${item.event}</td>
-          <td>${item.category}</td>
-          <td><button data-index="${idx}" class="secondary">Open Video</button></td>
-        `;
-        tbody.appendChild(tr);
+
+        if (item.video === "Not available") {
+          tr.innerHTML = `
+            <td>${item.event}</td>
+            <td>${item.category}</td>
+            <td>${item.title}</td>
+            <td><em>No video</em></td>
+          `;
+
+          tbody.appendChild(tr);
+        } else {
+        const downloadUrl = item.video.replace("raw=1", "dl=1"); // for download
+
+          tr.innerHTML = `
+            <td>${item.event}</td>
+            <td>${item.category}</td>
+            <td>${item.title}</td>
+            <td>
+              <div role="group">
+                <button data-index="${idx}" class="secondary">Open Video</button>
+                <button class="secondary">
+                  <a href="${downloadUrl}" download class="contrast">Download</a>
+                </button>
+              </div>
+            </td>
+
+          `;
+          tbody.appendChild(tr);
+        }
       });
     }
 
@@ -99,12 +120,6 @@
     });
 
     // Initialize Fuse
-    const fuse = new Fuse(data, {
-      keys: ["title", "event", "category"],
-      threshold: 0.35,
-      includeScore: true
-    });
-
     let currentResults = data;
 
     // Debounce function
@@ -122,17 +137,56 @@
         openVideoRow.remove();
         openVideoRow = null;
       }
+
       if (!q) {
         currentResults = data;
       } else {
-        currentResults = fuse.search(q).map(r => r.item);
+        const terms = q.split(/\s+/).filter(Boolean);
+        let results = data;
+
+        // apply Fuse filtering term by term
+        for (const term of terms) {
+          const fuse = new Fuse(results, {
+            keys: [
+              { name: "title", weight: 0.2 },
+              { name: "event", weight: 0.2 },
+              { name: "category", weight: 0.2 }
+            ],
+            threshold: 0.5,
+            ignoreLocation: true,
+            minMatchCharLength: 2,
+            isCaseSensitive: false,
+            includeScore: true
+          });
+
+          results = fuse.search(term).map(r => r.item);
+        }
+
+        // Final pass: score all results against the full query
+        const finalFuse = new Fuse(results, {
+          keys: [
+            { name: "title", weight: 0.2 },
+            { name: "event", weight: 0.2 },
+            { name: "category", weight: 0.2 }
+          ],
+          threshold: 0.5,
+          ignoreLocation: true,
+          minMatchCharLength: 2,
+          isCaseSensitive: false,
+          includeScore: true
+        });
+
+        currentResults = finalFuse.search(q)
+          .sort((a, b) => a.score - b.score) // best matches first
+          .map(r => r.item);
       }
+
       renderTable(currentResults);
     }
 
     document.getElementById("search").addEventListener(
       "input",
-      debounce(e => handleSearch(e.target.value.trim()), 250)
+      debounce(e => handleSearch(e.target.value.trim()), 100)
     );
 
     // Initial render
