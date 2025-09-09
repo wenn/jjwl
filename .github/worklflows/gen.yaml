@@ -1,0 +1,31 @@
+name: Generate index.yml
+
+on:
+  schedule:
+    - cron: '0 0 * * FRI'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Generate
+        run: |
+          #!/bin/bash
+          set -e
+          make
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add index.yml
+          if ! git diff --cached --quiet; then
+            git commit -m 'Update index.yml'
+            git push
+          else
+            echo "No changes to commit"
+          fi
