@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Table with Inline Video</title>
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    input { margin-bottom: 1rem; padding: 0.5rem; width: 50%; font-size: 1rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; vertical-align: top; }
+    th { background: #f2f2f2; }
+    .video-row td { background: #fafafa; text-align: center; }
+    video { max-width: 90%; margin: 1rem 0; }
+    button { padding: 0.3rem 0.6rem; font-size: 0.9rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>CSV Table with Fuzzy Search & Inline Video</h2>
+  <input type="text" id="search" placeholder="Search...">
+
+  <table id="csvTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Event</th>
+        <th>Category</th>
+        <th>Video</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Raw CSV data -->
+  <script id="csvData" type="text/plain">
+ELYANE AZIAKPO vs Ariel Romero,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 100-114,https://www.dropbox.com/scl/fi/4qmetoz7u82b7d98nwoxn/824734.mp4?rlkey=ksyts3x5bpimag6nd939s3uht&dl=1
+ELYANE AZIAKPO vs Llesenia Ochoa,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 100-114,https://www.dropbox.com/scl/fi/7ry8asdd4c7dg7hwbi5su/824733.mp4?rlkey=b6juzn704clk6gyy1aa9lsg86&dl=1
+Llesenia Ochoa vs Ariel Romero,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 100-114,https://www.dropbox.com/scl/fi/lkc1ny21jfasm9x3is7c4/824735.mp4?rlkey=c1kg075rsd6nr7rafr7bylls7&dl=1
+Cameron Gutierrez vs Vera Harshe,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/iwzhg4i0zvaughn32ryal/821117.mp4?rlkey=gmnk5676p1fk6bel30q7rj8a0&dl=1
+Paulina Mendivil vs Leah Rivas,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/ocbrpysfknih69m94dkr5/825370.mp4?rlkey=mjnlkfbekku2vx1pfd6nneaau&dl=1
+Paulina Mendivil vs Vera Harshe,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/bhc0ta020wdmluqu78hbb/825455.mp4?rlkey=zkc948ndwhg3gf799em5ht8tt&dl=1
+Peyton Sandner vs Cameron Gutierrez,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/8yrcd3g2ni3jzj6q7i3su/825368.mp4?rlkey=ndbzt6bbis35l6vy02t16v55z&dl=1
+Peyton Sandner vs Leah Rivas,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/i13v5qa8zn2u4lrsqwc9u/825454.mp4?rlkey=izgd7qs98354ygphpxa5g0x98&dl=1
+Vera Harshe vs Cameron Gutierrez,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 115-129,https://www.dropbox.com/scl/fi/9nlbccle1shjd3nja505u/825471.mp4?rlkey=un7t6gq2yknlu5wzy7xb3mec1&dl=1
+Gianna May vs Reagan Gunter,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 130-144,https://www.dropbox.com/scl/fi/tb342nmqowjjw2h6eoy8j/821271.mp4?rlkey=hqtgisqe43mkayascuu9vg56i&dl=1
+Gianna May vs Reagan Gunter,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Blue > 130-144,https://www.dropbox.com/scl/fi/vwify69ipz9hso570ay8j/821272.mp4?rlkey=tbyfayo74232mbehmqetau2bm&dl=1
+London Mendivil vs Adeline Hoffman,arizona-iv-gi-youth,Youth Female GI > Juvenile (17 and Under) > Grey > 145-159,https://www.dropbox.com/scl/fi/mw3nw0ostyawha6l7yg9q/820865.mp4?rlkey=6mzsk3axi88uganjvp0v7mes3&dl=1
+  </script>
+
+  <script>
+    const raw = document.getElementById("csvData").textContent.trim();
+    const rows = raw.split("\n").map(r => r.split(","));
+    const data = rows.map(r => ({
+      title: r[0].trim(),
+      event: r[1].trim(),
+      category: r[2].trim(),
+      video: r[3].trim()
+    }));
+
+    const tbody = document.querySelector("#csvTable tbody");
+    let openVideoRow = null;
+
+    function renderTable(items) {
+      tbody.innerHTML = "";
+      items.forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.title}</td>
+          <td>${item.event}</td>
+          <td>${item.category}</td>
+          <td><button data-index="${idx}">Open Video</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function attachHandlers(items) {
+      tbody.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = btn.dataset.index;
+          const row = btn.closest("tr");
+
+          // Close previous video if any
+          if (openVideoRow && openVideoRow !== row.nextSibling) {
+            openVideoRow.remove();
+            if (openVideoRow.previousSibling) {
+              openVideoRow.previousSibling.querySelector("button").textContent = "Open Video";
+            }
+            openVideoRow = null;
+          }
+
+          // Toggle current video
+          if (openVideoRow === row.nextSibling) {
+            openVideoRow.remove();
+            btn.textContent = "Open Video";
+            openVideoRow = null;
+          } else {
+            const videoRow = document.createElement("tr");
+            videoRow.classList.add("video-row");
+            videoRow.innerHTML = `<td colspan="4">
+              <video controls autoplay>
+                <source src="${items[idx].video}" type="video/mp4">
+                Your browser does not support the video tag.
+              </video>
+            </td>`;
+            row.insertAdjacentElement("afterend", videoRow);
+            btn.textContent = "Close Video";
+            openVideoRow = videoRow;
+          }
+        });
+      });
+    }
+
+    function refresh(items) {
+      renderTable(items);
+      attachHandlers(items);
+    }
+
+    // Initial render
+    refresh(data);
+
+    const fuse = new Fuse(data, {
+      keys: ["title", "event", "category"],
+      threshold: 0.4
+    });
+
+    document.getElementById("search").addEventListener("input", e => {
+      const q = e.target.value.trim();
+      if (openVideoRow) {
+        openVideoRow.remove();
+        openVideoRow = null;
+      }
+      if (q === "") {
+        refresh(data);
+      } else {
+        const results = fuse.search(q).map(r => r.item);
+        refresh(results);
+      }
+    });
+  </script>
+</body>
+</html>
