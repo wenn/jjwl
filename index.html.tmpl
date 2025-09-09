@@ -186,7 +186,7 @@
 
     document.getElementById("search").addEventListener(
       "input",
-      debounce(e => handleSearch(e.target.value.trim()), 100)
+      debounce(e => handleSearch(e.target.value.trim()), 500)
     );
 
     // Initial render
