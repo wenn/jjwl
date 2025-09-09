@@ -1,4 +1,4 @@
-name: Generate index.yml
+name: Generate index.html
 
 on:
   workflow_dispatch: {}
@@ -23,9 +23,9 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add index.yml
+          git add index.html
           if ! git diff --cached --quiet; then
-            git commit -m 'Update index.yml'
+            git commit -m 'Update index.html'
             git push
           else
             echo "No changes to commit"
