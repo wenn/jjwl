@@ -6,15 +6,81 @@
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
   <style>
-    body { padding: 1rem; }
-    table td, table th { vertical-align: top; }
-    .video-row td { background: #f9fafb; text-align: center; }
-    video { width: 100%; max-height: 480px; border-radius: 0.5rem; }
-    button { white-space: nowrap; }
+    :root {
+      --font-size-base: 1.1rem;
+      --font-size-large: 1.25rem;
+    }
+    body {
+      padding: 1rem;
+      font-size: var(--font-size-base);
+      line-height: 1.6;
+    }
+    header, main {
+      max-width: 100%;
+    }
+    input[type="search"] {
+      font-size: var(--font-size-large);
+      padding: 0.8rem 1rem;
+      margin-bottom: 1rem;
+    }
+    table {
+      width: 100%;
+      font-size: var(--font-size-base);
+    }
+    table td, table th {
+      vertical-align: top;
+      padding: 0.75rem;
+    }
+    table th {
+      font-size: var(--font-size-large);
+    }
+    .video-row td {
+      background: #f9fafb;
+      text-align: center;
+    }
+    video {
+      width: 100%;
+      max-height: 60vh;
+      border-radius: 0.75rem;
+    }
+    button {
+      font-size: var(--font-size-base);
+      padding: 0.6rem 1rem;
+      margin: 0.25rem 0;
+      white-space: nowrap;
+      border-radius: 0.5rem;
+    }
+    button a {
+      text-decoration: none;
+      font-size: inherit;
+      color: inherit;
+    }
+    @media (max-width: 768px) {
+      table th:nth-child(2),
+      table td:nth-child(2) {
+        display: none; /* hide Category on narrow screens */
+      }
+    }
+    @media (max-width: 480px) {
+      body {
+        font-size: 1.2rem;
+      }
+      table th, table td {
+        padding: 0.5rem;
+      }
+      button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+      [role="group"] {
+        display: flex;
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
-  <main class="container">
+  <main class="container-fluid">
     <input type="search" id="search" placeholder="🔍 Search matches..." aria-label="Search">
 
     <table id="csvTable" role="grid">
@@ -22,7 +88,7 @@
         <tr>
           <th>Event</th>
           <th>Category</th>
-          <th>Title</th>
+          <th>Match</th>
           <th>Video</th>
         </tr>
       </thead>
@@ -30,7 +96,7 @@
     </table>
   </main>
 
-  <!-- Raw CSV (shortened for example) -->
+  <!-- Raw CSV -->
   <script id="csvData" type="text/plain">
     CSV_DATA
   </script>
@@ -48,7 +114,6 @@
     const tbody = document.querySelector("#csvTable tbody");
     let openVideoRow = null;
 
-    // Render limited rows
     function renderTable(items, limit = 200) {
       tbody.innerHTML = "";
       items.slice(0, limit).forEach((item, idx) => {
@@ -61,11 +126,9 @@
             <td>${item.title}</td>
             <td><em>No video</em></td>
           `;
-
           tbody.appendChild(tr);
         } else {
-        const downloadUrl = item.video.replace("raw=1", "dl=1"); // for download
-
+          const downloadUrl = item.video.replace("raw=1", "dl=1");
           tr.innerHTML = `
             <td>${item.event}</td>
             <td>${item.category}</td>
@@ -78,20 +141,18 @@
                 </button>
               </div>
             </td>
-
           `;
           tbody.appendChild(tr);
         }
       });
     }
 
-    // Use event delegation for buttons
     tbody.addEventListener("click", e => {
-      if (e.target.tagName !== "BUTTON") return;
-      const idx = e.target.dataset.index;
-      const row = e.target.closest("tr");
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      const idx = btn.dataset.index;
+      const row = btn.closest("tr");
 
-      // Close previous video
       if (openVideoRow && openVideoRow !== row.nextSibling) {
         openVideoRow.remove();
         if (openVideoRow.previousSibling) {
@@ -100,10 +161,9 @@
         openVideoRow = null;
       }
 
-      // Toggle this video
       if (openVideoRow === row.nextSibling) {
         openVideoRow.remove();
-        e.target.textContent = "Open Video";
+        btn.textContent = "Open Video";
         openVideoRow = null;
       } else {
         const videoRow = document.createElement("tr");
@@ -114,15 +174,13 @@
           </video>
         </td>`;
         row.insertAdjacentElement("afterend", videoRow);
-        e.target.textContent = "Close Video";
+        btn.textContent = "Close Video";
         openVideoRow = videoRow;
       }
     });
 
-    // Initialize Fuse
     let currentResults = data;
 
-    // Debounce function
     function debounce(fn, delay = 250) {
       let t;
       return (...args) => {
@@ -131,26 +189,22 @@
       };
     }
 
-    // Search handler
     function handleSearch(q) {
       if (openVideoRow) {
         openVideoRow.remove();
         openVideoRow = null;
       }
-
       if (!q) {
         currentResults = data;
       } else {
         const terms = q.split(/\s+/).filter(Boolean);
         let results = data;
-
-        // apply Fuse filtering term by term
         for (const term of terms) {
           const fuse = new Fuse(results, {
             keys: [
-              { name: "title", weight: 0.2 },
-              { name: "event", weight: 0.2 },
-              { name: "category", weight: 0.2 }
+              { name: "title", weight: 0.3 },
+              { name: "event", weight: 0.3 },
+              { name: "category", weight: 0.3 }
             ],
             threshold: 0.5,
             ignoreLocation: true,
@@ -158,29 +212,20 @@
             isCaseSensitive: false,
             includeScore: true
           });
-
           results = fuse.search(term).map(r => r.item);
         }
-
-        // Final pass: score all results against the full query
         const finalFuse = new Fuse(results, {
-          keys: [
-            { name: "title", weight: 0.2 },
-            { name: "event", weight: 0.2 },
-            { name: "category", weight: 0.2 }
-          ],
+          keys: ["title", "event", "category"],
           threshold: 0.5,
           ignoreLocation: true,
           minMatchCharLength: 2,
           isCaseSensitive: false,
           includeScore: true
         });
-
         currentResults = finalFuse.search(q)
-          .sort((a, b) => a.score - b.score) // best matches first
+          .sort((a, b) => a.score - b.score)
           .map(r => r.item);
       }
-
       renderTable(currentResults);
     }
 
@@ -189,7 +234,6 @@
       debounce(e => handleSearch(e.target.value.trim()), 500)
     );
 
-    // Initial render
     renderTable(data);
   </script>
 </body>
