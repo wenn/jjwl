@@ -67,6 +67,6 @@ data/matches.csv: always
 	@ruby category.rb
 
 index.html: index.html.tmpl data/matches.csv
-	@awk 'BEGIN { while ((getline < "data/matches.csv") > 0) content = content $$0 RS } /CSV_DATA/{printf "%s", content; next} {print}' $< > $@ && open $@
+	@awk 'BEGIN { while ((getline < "data/matches.csv") > 0) content = content $$0 RS } /CSV_DATA/{printf "%s", content; next} {print}' $< > $@
 	@gsed -i 's/dl=0/raw=1/g' $@
 	@gsed -i 's/raw=0/raw=1/g' $@
