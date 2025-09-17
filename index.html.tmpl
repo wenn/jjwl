@@ -7,8 +7,8 @@
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@2.0.6/css/pico.min.css">
   <style>
     :root {
-      --font-size-base: 1.1rem;
-      --font-size-large: 1.25rem;
+      --font-size-base: 1.2rem;
+      --font-size-large: 1.4rem;
     }
     body {
       padding: 1rem;
@@ -20,8 +20,9 @@
     }
     input[type="search"] {
       font-size: var(--font-size-large);
-      padding: 0.8rem 1rem;
-      margin-bottom: 1rem;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.5rem;
+      min-height: 48px;
     }
     table {
       width: 100%;
@@ -29,7 +30,7 @@
     }
     table td, table th {
       vertical-align: top;
-      padding: 0.75rem;
+      padding: 1rem;
     }
     table th {
       font-size: var(--font-size-large);
@@ -45,10 +46,11 @@
     }
     button {
       font-size: var(--font-size-base);
-      padding: 0.6rem 1rem;
-      margin: 0.25rem 0;
+      padding: 0.8rem 1.2rem;
+      margin: 0.5rem 0;
       white-space: nowrap;
       border-radius: 0.5rem;
+      min-height: 48px;
     }
     button a {
       text-decoration: none;
@@ -63,14 +65,26 @@
     }
     @media (max-width: 480px) {
       body {
-        font-size: 1.2rem;
+        font-size: 1.4rem;
+        padding: 1.5rem;
+      }
+      input[type="search"] {
+        font-size: 1.6rem;
+        padding: 1.2rem;
+        margin-bottom: 2rem;
       }
       table th, table td {
-        padding: 0.5rem;
+        padding: 1.2rem;
+      }
+      table th {
+        font-size: 1.5rem;
       }
       button {
         width: 100%;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
+        padding: 1rem;
+        font-size: 1.3rem;
+        min-height: 56px;
       }
       [role="group"] {
         display: flex;
