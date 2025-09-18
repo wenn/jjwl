@@ -3,7 +3,11 @@ name: Generate index.html
 on:
   workflow_dispatch: {}
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '* * * * 1,5'
+
+permissions:
+  contents: write
+  id-token: write
 
 jobs:
   build:
@@ -15,6 +19,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_SECRET }}
+          owner: wenn
           repositories: jjwl
       - name: Checkout repository
         uses: actions/checkout@v3
