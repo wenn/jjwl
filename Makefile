@@ -29,7 +29,7 @@ data/events/next.events.json: always
 		-d "type=next&age=1" > $@
 
 .PHONY: data/events
-data/events: data/events/next.events.json data/events/past.events.json
+data/events: data/events/past.events.json
 	@mkdir -p $@
 	@jq -c -s 'add | map({name: .name, urlfriendly: .urlfriendly})[]' $^ | \
 	while read -r ev; do \
